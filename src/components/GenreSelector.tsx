@@ -4,11 +4,11 @@ import { genres } from '../data/genres'
 import { moods } from '../data/moods'
 import { getArtistsByGenre } from '../data/artists'
 
-const genreAccentColors: Record<Genre, string> = {
-  house: 'amber',
-  techno: 'red',
-  trance: 'cyan',
-  dnb: 'green',
+const genreAccentHex: Record<Genre, string> = {
+  house: '#f59e0b',
+  techno: '#ef4444',
+  trance: '#06b6d4',
+  dnb: '#22c55e',
 }
 
 const genreButtonStyles: Record<Genre, string> = {
@@ -59,7 +59,7 @@ export function GenreSelector({
 }: GenreSelectorProps) {
   const artists = getArtistsByGenre(genre)
   const currentGenreConfig = genres.find((g) => g.id === genre)!
-  const accent = genreAccentColors[genre]
+  const accentHex = genreAccentHex[genre]
 
   return (
     <div className="space-y-5">
@@ -134,8 +134,8 @@ export function GenreSelector({
           max={currentGenreConfig.bpmRange[1]}
           value={bpm}
           onChange={(e) => onBpmChange(Number(e.target.value))}
-          className="w-full accent-current"
-          style={{ accentColor: `var(--color-${accent}-500)` }}
+          className="w-full"
+          style={{ accentColor: accentHex }}
         />
         <div className="flex justify-between text-xs text-zinc-600 mt-1">
           <span>{currentGenreConfig.bpmRange[0]}</span>
