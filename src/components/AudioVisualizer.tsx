@@ -49,9 +49,32 @@ export function AudioVisualizer({ isPlaying, accentColor, analyserNode }: AudioV
     if (analyserNode) {
       const dataArray = new Uint8Array(analyserNode.frequencyBinCount)
       analyserNode.getByteFrequencyData(dataArray)
+
+      const minFreq = 20     // 20 Hz
+      const maxFreq = 16000  // 16 kHz
+      const logMin = Math.log10(minFreq)
+      const logMax = Math.log10(maxFreq)
+      const sampleRate = 44100
+      const nyquist = sampleRate / 2
+
       for (let i = 0; i < BAR_COUNT; i++) {
-        const dataIndex = Math.floor((i / BAR_COUNT) * dataArray.length)
-        targetBarsRef.current[i] = dataArray[dataIndex] / 255
+        // Map bar index to frequency using logarithmic scale
+        const logFreq = logMin + (i / BAR_COUNT) * (logMax - logMin)
+        const freq = Math.pow(10, logFreq)
+        const nextLogFreq = logMin + ((i + 1) / BAR_COUNT) * (logMax - logMin)
+        const nextFreq = Math.pow(10, nextLogFreq)
+
+        // Convert frequencies to FFT bin indices
+        const binStart = Math.floor((freq / nyquist) * dataArray.length)
+        const binEnd = Math.max(binStart + 1, Math.floor((nextFreq / nyquist) * dataArray.length))
+
+        // Average the bins in this range for smoother display
+        let sum = 0
+        const count = Math.min(binEnd, dataArray.length) - Math.min(binStart, dataArray.length)
+        for (let j = binStart; j < binEnd && j < dataArray.length; j++) {
+          sum += dataArray[j]
+        }
+        targetBarsRef.current[i] = count > 0 ? (sum / count) / 255 : 0
       }
     } else if (isPlaying) {
       const time = Date.now() / 1000

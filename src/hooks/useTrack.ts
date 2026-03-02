@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Genre, GeneratedTrack, LayerName, Mood, TrackState } from '../types'
-import { buildTrack } from '../engine/patternBuilder'
+import { buildTrack, buildCodeFromLayers } from '../engine/patternBuilder'
 import { remixTrack } from '../engine/remixer'
 import {
   initStrudelEngine,
@@ -47,6 +47,29 @@ export function useTrack() {
     }
   }, [])
 
+  // Spacebar play/pause toggle
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.code !== 'Space') return
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      e.preventDefault()
+      setState((prev) => {
+        if (prev.isPlaying) {
+          stopPlayback()
+          return { ...prev, isPlaying: false }
+        }
+        if (generatedTrack) {
+          playPattern(generatedTrack.code)
+          return { ...prev, isPlaying: true }
+        }
+        return prev
+      })
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [generatedTrack])
+
   const ensureInit = useCallback(async () => {
     if (!initRef.current) {
       await initStrudelEngine()
@@ -73,25 +96,52 @@ export function useTrack() {
     setState((prev) => ({ ...prev, bpm }))
   }, [])
 
-  const toggleMute = useCallback((layer: LayerName) => {
-    setState((prev) => ({
-      ...prev,
-      layers: {
-        ...prev.layers,
-        [layer]: { ...prev.layers[layer], muted: !prev.layers[layer].muted },
-      },
-    }))
+  // Re-evaluate code when mute or volume changes while playing
+  const rebuildAndPlay = useCallback(async (
+    layers: TrackState['layers'],
+    track: GeneratedTrack,
+  ) => {
+    const muteState = {
+      drums: layers.drums.muted,
+      bass: layers.bass.muted,
+      lead: layers.lead.muted,
+      fx: layers.fx.muted,
+    }
+    const volumeState = {
+      drums: layers.drums.volume,
+      bass: layers.bass.volume,
+      lead: layers.lead.volume,
+      fx: layers.fx.volume,
+    }
+    const newCode = buildCodeFromLayers(track.layers, track.bpm, muteState, volumeState)
+    await playPattern(newCode)
   }, [])
 
+  const toggleMute = useCallback((layer: LayerName) => {
+    setState((prev) => {
+      const newLayers = {
+        ...prev.layers,
+        [layer]: { ...prev.layers[layer], muted: !prev.layers[layer].muted },
+      }
+      if (prev.isPlaying && generatedTrack) {
+        rebuildAndPlay(newLayers, generatedTrack)
+      }
+      return { ...prev, layers: newLayers }
+    })
+  }, [generatedTrack, rebuildAndPlay])
+
   const setVolume = useCallback((layer: LayerName, volume: number) => {
-    setState((prev) => ({
-      ...prev,
-      layers: {
+    setState((prev) => {
+      const newLayers = {
         ...prev.layers,
         [layer]: { ...prev.layers[layer], volume },
-      },
-    }))
-  }, [])
+      }
+      if (prev.isPlaying && generatedTrack) {
+        rebuildAndPlay(newLayers, generatedTrack)
+      }
+      return { ...prev, layers: newLayers }
+    })
+  }, [generatedTrack, rebuildAndPlay])
 
   const toggleShowCode = useCallback(() => {
     setState((prev) => ({ ...prev, showCode: !prev.showCode }))

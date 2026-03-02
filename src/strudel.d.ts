@@ -4,4 +4,5 @@ declare module '@strudel/web' {
   export function hush(): void
   export function defaultPrebake(): Promise<void>
   export function getAudioContext(): AudioContext | undefined
+  export function samples(url: string): Promise<any>
 }

@@ -25,7 +25,9 @@ export async function initStrudelEngine(): Promise<void> {
     // initStrudel creates an AudioContext internally, but we need it to exist first
     // We'll set up the analyser after init using getAudioContext
     console.log('[newsic] Calling initStrudel()...')
-    await strudel.initStrudel()
+    await strudel.initStrudel({
+      prebake: () => strudel.samples('github:tidalcycles/dirt-samples'),
+    })
 
     evaluateFn = strudel.evaluate
     hushFn = strudel.hush

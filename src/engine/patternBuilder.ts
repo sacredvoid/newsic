@@ -1,4 +1,4 @@
-import type { GeneratedTrack, Genre, LayerConfig, Mood } from '../types'
+import type { GeneratedTrack, Genre, LayerConfig, LayerName, Mood, MoodModifier } from '../types'
 import { getGenre } from '../data/genres'
 import { getMood } from '../data/moods'
 import { getArtist } from '../data/artists'
@@ -23,242 +23,200 @@ export function buildTrack(
   const keys = artist?.preferredKeys ?? ['Cm']
   const key = keys[Math.floor(Math.random() * keys.length)]
 
-  // Build individual layer code strings (for the mixer display)
+  // Build individual layer code strings
   const drumsCode = buildDrumsLayer(drumsConfig)
-  const bassCode = buildMelodicLayer(bassConfig, moodConfig?.effectOverrides)
-  const leadCode = buildMelodicLayer(leadConfig, moodConfig?.effectOverrides)
-  const fxCode = buildFxLayer(fxConfig, moodConfig?.effectOverrides)
+  const bassCode = buildMelodicLayer(bassConfig, moodConfig)
+  const leadCode = buildMelodicLayer(leadConfig, moodConfig)
+  const fxCode = buildFxLayer(fxConfig, moodConfig)
 
-  // Build the FULL structured track with arrangement
-  const fullCode = buildArrangedTrack(
-    adjustedBpm,
-    genre,
-    drumsConfig,
-    bassConfig,
-    leadConfig,
-    fxConfig,
-    moodConfig?.effectOverrides,
-  )
+  const layers = { drums: drumsCode, bass: bassCode, lead: leadCode, fx: fxCode }
 
-  return {
-    code: fullCode,
-    layers: { drums: drumsCode, bass: bassCode, lead: leadCode, fx: fxCode },
-    bpm: adjustedBpm,
-    key,
-  }
+  // Build full code using stack()
+  const code = buildCodeFromLayers(layers, adjustedBpm, {
+    drums: false, bass: false, lead: false, fx: false,
+  }, {
+    drums: 1, bass: 1, lead: 1, fx: 1,
+  })
+
+  return { code, layers, bpm: adjustedBpm, key }
 }
 
-// Build a full EDM-structured track using Strudel's arrange() and gain automation
-// Structure: Intro (4 cycles) -> Buildup (4) -> Drop (8) -> Breakdown (4) -> Drop 2 (8) -> Outro (4)
-function buildArrangedTrack(
+// Exported so useTrack can rebuild code with mute/volume changes
+export function buildCodeFromLayers(
+  layers: Record<LayerName, string>,
   bpm: number,
-  genre: Genre,
-  drums: LayerConfig,
-  bass: LayerConfig,
-  lead: LayerConfig,
-  fx: LayerConfig,
-  moodEffects?: string[],
+  muteState: Record<LayerName, boolean>,
+  volumeState: Record<LayerName, number>,
 ): string {
-  const moodFx = moodEffects ? moodEffects.join('') : ''
+  const lines: string[] = [`setcpm(${bpm} / 4)`, '']
 
-  // Get the raw pattern strings
-  const drumPattern = drums.pattern
-  const drumEffects = drums.effects.join('')
+  const layerEntries: string[] = []
+  const layerNames: LayerName[] = ['drums', 'bass', 'lead', 'fx']
 
-  const bassHasNote = bass.pattern.includes('note(')
-  const bassPatternStr = bassHasNote ? bass.pattern : `note("${bass.pattern}")`
-  const bassSound = bass.sound ? `.sound("${bass.sound}")` : ''
-  const bassFx = bass.effects.join('')
-
-  const leadHasNote = lead.pattern.includes('note(')
-  const leadPatternStr = leadHasNote ? lead.pattern : `note("${lead.pattern}")`
-  const leadSound = lead.sound ? `.sound("${lead.sound}")` : ''
-  const leadFx = lead.effects.join('')
-
-  const fxHasNote = fx.pattern.includes('note(')
-  const fxIsEmpty = fx.pattern.trim() === '~ ~ ~ ~' || fx.pattern.trim() === ''
-  let fxPatternStr: string
-  if (fxIsEmpty) {
-    fxPatternStr = 'sound("~")'
-  } else if (fxHasNote) {
-    const fxSound = fx.sound ? `.sound("${fx.sound}")` : ''
-    fxPatternStr = `${fx.pattern}${fxSound}`
-  } else {
-    fxPatternStr = `sound("${fx.pattern}")`
-  }
-  const fxFx = fx.effects.join('')
-
-  // Build the tempo and structure comment
-  const lines: string[] = [
-    `setcpm(${bpm} / 4)`,
-    '',
-    `// ====== ${genre.toUpperCase()} TRACK ======`,
-    `// Structure: Intro -> Buildup -> Drop -> Breakdown -> Drop 2 -> Outro`,
-    '',
-  ]
-
-  // ---- DRUMS with arrangement ----
-  // Intro: just hihats/light percussion
-  // Buildup: add kick, filter sweep up
-  // Drop: full drums
-  // Breakdown: stripped back
-  // Drop 2: full drums again
-  // Outro: fade out kicks
-  lines.push(
-    '// Drums - full arrangement',
-    `$: arrange(`,
-    `  [4, sound("${getIntroDrums(genre)}").gain(0.6)],`,
-    `  [4, sound("${getBuildupDrums(genre, drumPattern)}").lpf(sine.slow(4).range(400, 8000))${drumEffects}],`,
-    `  [8, sound("${drumPattern}")${drumEffects}.gain(0.9)],`,
-    `  [4, sound("${getBreakdownDrums(genre)}").gain(0.5)],`,
-    `  [8, sound("${drumPattern}")${drumEffects}.gain(0.95)],`,
-    `  [4, sound("${getOutroDrums(genre, drumPattern)}").gain(saw.slow(4).range(0.7, 0.1))]`,
-    `)`,
-    '',
-  )
-
-  // ---- BASS with arrangement ----
-  // Intro: silent
-  // Buildup: low-passed, rising filter
-  // Drop: full bass
-  // Breakdown: quiet bass
-  // Drop 2: full bass
-  // Outro: fading bass
-  lines.push(
-    '// Bass - enters at buildup, full at drop',
-    `$: arrange(`,
-    `  [4, silence],`,
-    `  [4, ${bassPatternStr}${bassSound}${bassFx}.lpf(saw.slow(4).range(200, 2000)).gain(0.5)${moodFx}],`,
-    `  [8, ${bassPatternStr}${bassSound}${bassFx}.gain(0.8)${moodFx}],`,
-    `  [4, ${bassPatternStr}${bassSound}${bassFx}.lpf(800).gain(0.3)${moodFx}],`,
-    `  [8, ${bassPatternStr}${bassSound}${bassFx}.gain(0.85)${moodFx}],`,
-    `  [4, ${bassPatternStr}${bassSound}${bassFx}.gain(saw.slow(4).range(0.6, 0))${moodFx}]`,
-    `)`,
-    '',
-  )
-
-  // ---- LEAD with arrangement ----
-  // Intro: silent
-  // Buildup: teaser notes, filtered
-  // Drop: full lead
-  // Breakdown: melodic, reverb-heavy
-  // Drop 2: full lead with variation
-  // Outro: fading
-  lines.push(
-    '// Lead - melodic hook at the drops',
-    `$: arrange(`,
-    `  [4, silence],`,
-    `  [4, ${leadPatternStr}${leadSound}${leadFx}.lpf(sine.slow(4).range(500, 4000)).gain(0.3)${moodFx}],`,
-    `  [8, ${leadPatternStr}${leadSound}${leadFx}.gain(0.65)${moodFx}],`,
-    `  [4, ${leadPatternStr}${leadSound}${leadFx}.room(0.6).gain(0.4)${moodFx}],`,
-    `  [8, ${leadPatternStr}${leadSound}${leadFx}.gain(0.7).delay(0.2)${moodFx}],`,
-    `  [4, ${leadPatternStr}${leadSound}${leadFx}.gain(saw.slow(4).range(0.5, 0))${moodFx}]`,
-    `)`,
-    '',
-  )
-
-  // ---- FX/ATMOSPHERE with arrangement ----
-  // FX plays throughout with varying intensity
-  if (!fxIsEmpty) {
-    lines.push(
-      '// FX/Atmosphere - ambient throughout',
-      `$: arrange(`,
-      `  [4, ${fxPatternStr}${fxFx}.room(0.7).gain(0.2)${moodFx}],`,
-      `  [4, ${fxPatternStr}${fxFx}.room(0.5).gain(0.35)${moodFx}],`,
-      `  [8, ${fxPatternStr}${fxFx}.gain(0.25)${moodFx}],`,
-      `  [4, ${fxPatternStr}${fxFx}.room(0.8).gain(0.4)${moodFx}],`,
-      `  [8, ${fxPatternStr}${fxFx}.gain(0.3)${moodFx}],`,
-      `  [4, ${fxPatternStr}${fxFx}.gain(saw.slow(4).range(0.3, 0))${moodFx}]`,
-      `)`,
-    )
+  for (const name of layerNames) {
+    if (muteState[name]) {
+      layerEntries.push(`  // ${name} (muted)\n  silence`)
+    } else {
+      const vol = volumeState[name]
+      const gainSuffix = vol < 1 ? `.gain(${vol.toFixed(2)})` : ''
+      layerEntries.push(`  // ${name}\n  ${layers[name]}${gainSuffix}`)
+    }
   }
 
+  lines.push(`stack(\n${layerEntries.join(',\n\n')}\n)`)
   return lines.join('\n')
 }
 
-// Genre-specific intro drums (light, building anticipation)
-function getIntroDrums(genre: Genre): string {
-  switch (genre) {
-    case 'house':
-      return 'hh*4 oh , ~ ~ ~ ~'
-    case 'techno':
-      return 'hh*8'
-    case 'trance':
-      return 'hh*4 oh hh*4 oh'
-    case 'dnb':
-      return 'hh*8 , ~ ~ ride ~'
-  }
-}
-
-// Buildup drums (adding energy, may include kick)
-function getBuildupDrums(genre: Genre, fullPattern: string): string {
-  switch (genre) {
-    case 'house':
-      return `bd ~ bd ~ , hh*8 , ~ cp ~ ~`
-    case 'techno':
-      return `bd bd bd bd , hh*16`
-    case 'trance':
-      return `bd bd bd bd , hh*8 , ~ ~ cp ~`
-    case 'dnb':
-      return fullPattern
-  }
-}
-
-// Breakdown drums (stripped back, tension)
-function getBreakdownDrums(genre: Genre): string {
-  switch (genre) {
-    case 'house':
-      return '~ ~ ~ ~ , hh*4 oh , ~ cp ~ ~'
-    case 'techno':
-      return 'hh*8 , ~ cp ~ cp'
-    case 'trance':
-      return 'hh*4 , ~ ~ ~ cp'
-    case 'dnb':
-      return '~ ~ ~ ~ , hh*4 , ~ ~ ride ~'
-  }
-}
-
-// Outro drums (fading out)
-function getOutroDrums(genre: Genre, fullPattern: string): string {
-  switch (genre) {
-    case 'house':
-    case 'techno':
-      return `bd bd bd bd , hh*4`
-    case 'trance':
-      return `bd ~ bd ~ , hh*4`
-    case 'dnb':
-      return fullPattern
-  }
-}
-
-// Simple layer builders for the mixer board display
 function buildDrumsLayer(config: LayerConfig): string {
-  const effects = config.effects.join('')
-  return `sound("${config.pattern}")${effects}`
+  const bank = config.samples?.[0] ? getBankFromSample(config.samples[0]) : ''
+  const bankStr = bank ? `.bank("${bank}")` : ''
+  // Include non-gain effects from config, then always end with .gain(0.9)
+  const effects = buildEffectChain(config.effects, undefined, new Set(['gain']))
+  return `sound("${config.pattern}")${bankStr}${effects}.gain(0.9)`
 }
 
-function buildMelodicLayer(config: LayerConfig, moodEffects?: string[]): string {
-  const sound = config.sound ? `.sound("${config.sound}")` : ''
-  const baseEffects = config.effects.join('')
-  const extraEffects = moodEffects ? moodEffects.join('') : ''
+function buildMelodicLayer(config: LayerConfig, mood?: MoodModifier | undefined): string {
+  const hasNote = config.pattern.includes('note(')
+  const patternStr = hasNote ? config.pattern : `note("${config.pattern}")`
+  const soundStr = config.sound ? `.sound("${config.sound}")` : ''
 
-  if (config.pattern.includes('note(')) {
-    return `${config.pattern}${sound}${baseEffects}${extraEffects}`
+  const fx = buildEffectChain(config.effects, mood)
+
+  // Ensure gain is always present
+  if (!fx.includes('.gain(')) {
+    return `${patternStr}${soundStr}${fx}.gain(0.6)`
   }
-  return `note("${config.pattern}")${sound}${baseEffects}${extraEffects}`
+  return `${patternStr}${soundStr}${fx}`
 }
 
-function buildFxLayer(config: LayerConfig, moodEffects?: string[]): string {
-  const baseEffects = config.effects.join('')
-  const extraEffects = moodEffects ? moodEffects.join('') : ''
-
+function buildFxLayer(config: LayerConfig, mood?: MoodModifier | undefined): string {
   if (config.pattern.trim() === '~ ~ ~ ~' || config.pattern.trim() === '') {
-    return `sound("~")${baseEffects}${extraEffects}`
+    return `sound("~").gain(0.25)`
   }
 
-  if (config.pattern.includes('note(')) {
-    const sound = config.sound ? `.sound("${config.sound}")` : ''
-    return `${config.pattern}${sound}${baseEffects}${extraEffects}`
+  const hasNote = config.pattern.includes('note(')
+  let patternStr: string
+  if (hasNote) {
+    const soundStr = config.sound ? `.sound("${config.sound}")` : ''
+    patternStr = `${config.pattern}${soundStr}`
+  } else {
+    patternStr = `sound("${config.pattern}")`
   }
-  return `sound("${config.pattern}")${baseEffects}${extraEffects}`
+
+  const fx = buildEffectChain(config.effects, mood)
+
+  // Ensure room and gain are present
+  let result = `${patternStr}${fx}`
+  if (!fx.includes('.room(')) {
+    result += `.room(0.4)`
+  }
+  if (!fx.includes('.gain(')) {
+    result += `.gain(0.25)`
+  }
+  return result
+}
+
+/**
+ * Build a chain of Strudel effects from an array of effect strings.
+ *
+ * Effects containing Strudel pattern syntax (angle brackets like <400 800>)
+ * are included verbatim. Numeric effects are extracted and may be adjusted
+ * by mood parameters. The `cutoff` effect is normalized to `lpf`.
+ *
+ * Mood adjustments that don't correspond to an existing effect are appended.
+ */
+function buildEffectChain(
+  effects: string[],
+  mood?: MoodModifier,
+  skipEffects?: Set<string>,
+): string {
+  let fx = ''
+  const used = new Set<string>()
+
+  for (const e of effects) {
+    // Extract the effect name from the string
+    const nameMatch = e.match(/\.(\w+)\(/)
+    if (!nameMatch) {
+      // Not a recognized effect format, include as-is
+      fx += e
+      continue
+    }
+
+    const rawName = nameMatch[1]
+    const effectName = rawName === 'cutoff' ? 'lpf' : rawName
+
+    // Skip effects in the skip set (e.g., skip gain for drums)
+    if (skipEffects?.has(effectName)) continue
+
+    // If effect contains Strudel pattern syntax (< >), include verbatim
+    if (e.includes('<')) {
+      // For pattern-based lpf/cutoff, mood filterCutoff doesn't apply
+      // since it's already a dynamic pattern
+      if (rawName === 'cutoff') {
+        // Normalize .cutoff() to .lpf() but keep the pattern value
+        fx += e.replace('.cutoff(', '.lpf(')
+      } else {
+        fx += e
+      }
+      used.add(effectName)
+      continue
+    }
+
+    // Try to extract numeric value
+    const numMatch = e.match(/\.\w+\(([\d.]+)\)/)
+    if (!numMatch) {
+      // Non-numeric, non-pattern value - include as-is
+      fx += e
+      used.add(effectName)
+      continue
+    }
+
+    let value = parseFloat(numMatch[1])
+
+    // Apply mood adjustments to numeric values
+    if (mood) {
+      if ((effectName === 'lpf') && mood.filterCutoff !== undefined) {
+        value = Math.min(value, mood.filterCutoff)
+      }
+      if (effectName === 'gain' && mood.gainMultiplier !== undefined) {
+        value = parseFloat((value * mood.gainMultiplier).toFixed(3))
+      }
+      if (effectName === 'room' && mood.reverbAmount !== undefined) {
+        value = mood.reverbAmount
+      }
+      if (effectName === 'delay' && mood.delayAmount !== undefined) {
+        value = mood.delayAmount
+      }
+      if (effectName === 'distort' && mood.distortAmount !== undefined) {
+        value = mood.distortAmount
+      }
+    }
+
+    fx += `.${effectName}(${value})`
+    used.add(effectName)
+  }
+
+  // Add mood effects that weren't already present in the effect chain
+  if (mood) {
+    if (mood.reverbAmount !== undefined && !used.has('room')) {
+      fx += `.room(${mood.reverbAmount})`
+      used.add('room')
+    }
+    if (mood.delayAmount !== undefined && !used.has('delay')) {
+      fx += `.delay(${mood.delayAmount})`
+      used.add('delay')
+    }
+    if (mood.distortAmount !== undefined && !used.has('distort')) {
+      fx += `.distort(${mood.distortAmount})`
+      used.add('distort')
+    }
+  }
+
+  return fx
+}
+
+function getBankFromSample(sample: string): string {
+  // Map common sample prefixes to banks
+  if (sample.startsWith('bd') || sample === 'bd') return 'RolandTR909'
+  return ''
 }

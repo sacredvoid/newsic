@@ -4,13 +4,12 @@ export const moods: MoodModifier[] = [
   {
     id: 'energetic',
     label: 'Energetic',
-    effectOverrides: ['.gain(0.9)'],
     bpmAdjust: 4,
+    gainMultiplier: 1.1,
   },
   {
     id: 'dark',
     label: 'Dark',
-    effectOverrides: ['.lpf(600)', '.room(0.6)'],
     bpmAdjust: -2,
     filterCutoff: 600,
     reverbAmount: 0.6,
@@ -18,28 +17,29 @@ export const moods: MoodModifier[] = [
   {
     id: 'dreamy',
     label: 'Dreamy',
-    effectOverrides: ['.delay(0.5)', '.room(0.7)'],
     bpmAdjust: -4,
+    delayAmount: 0.5,
     reverbAmount: 0.7,
   },
   {
     id: 'hypnotic',
     label: 'Hypnotic',
-    effectOverrides: ['.delay(0.25)'],
     bpmAdjust: 0,
+    delayAmount: 0.25,
   },
   {
     id: 'uplifting',
     label: 'Uplifting',
-    effectOverrides: ['.cutoff(3000)', '.gain(0.85)'],
     bpmAdjust: 2,
+    filterCutoff: 3000,
+    gainMultiplier: 1.05,
   },
   {
     id: 'aggressive',
     label: 'Aggressive',
-    effectOverrides: ['.distort(0.3)', '.gain(0.95)'],
     bpmAdjust: 6,
-    filterCutoff: 2000,
+    distortAmount: 0.3,
+    gainMultiplier: 1.15,
   },
 ]
 

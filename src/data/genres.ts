@@ -7,8 +7,8 @@ export const genres: GenreConfig[] = [
     defaultBpm: 124,
     bpmRange: [118, 132],
     defaultDrums: {
-      pattern: 'bd sd:1 bd [sd:1 bd]',
-      samples: ['bd', 'sd:1', 'hh:2'],
+      pattern: 'bd*4, [~ cp]*2, hh*8',
+      samples: ['bd', 'cp', 'hh'],
       effects: [],
     },
     defaultBass: {

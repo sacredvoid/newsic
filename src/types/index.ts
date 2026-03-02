@@ -38,10 +38,12 @@ export interface GenreConfig {
 export interface MoodModifier {
   id: Mood
   label: string
-  effectOverrides: string[]
   bpmAdjust: number
+  gainMultiplier?: number
   filterCutoff?: number
   reverbAmount?: number
+  delayAmount?: number
+  distortAmount?: number
 }
 
 export interface TrackState {
