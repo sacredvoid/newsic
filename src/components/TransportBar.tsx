@@ -2,81 +2,73 @@ import { motion } from 'framer-motion'
 
 interface TransportBarProps {
   isPlaying: boolean
-  showCode: boolean
   hasTrack: boolean
   onPlay: () => void
   onStop: () => void
   onRemix: () => void
-  onToggleCode: () => void
   loading: boolean
+  accentColor: string
 }
 
 export function TransportBar({
   isPlaying,
-  showCode,
   hasTrack,
   onPlay,
   onStop,
   onRemix,
-  onToggleCode,
   loading,
+  accentColor,
 }: TransportBarProps) {
   return (
-    <div className="sticky bottom-0 bg-zinc-900/95 backdrop-blur-sm border-t border-zinc-800 p-3">
-      <div className="max-w-4xl mx-auto flex items-center justify-center gap-3">
-        {/* Play/Stop */}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={isPlaying ? onStop : onPlay}
-          disabled={!hasTrack || loading}
-          className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all ${
-            !hasTrack
-              ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-              : isPlaying
-                ? 'bg-white text-black hover:bg-zinc-200'
-                : 'bg-white text-black hover:bg-zinc-200'
-          }`}
-        >
+    <div className="px-5 py-3 flex items-center justify-center gap-4">
+      {/* Play/Stop */}
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={isPlaying ? onStop : onPlay}
+        disabled={!hasTrack || loading}
+        className="relative w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold transition-all"
+        style={{
+          background: !hasTrack ? 'var(--surface-raised)' : '#fafafa',
+          color: !hasTrack ? 'var(--text-muted)' : '#0a0a0f',
+          cursor: !hasTrack ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {/* Pulsing ring when playing */}
+        {isPlaying && (
+          <motion.div
+            className="absolute inset-0 rounded-full"
+            style={{ border: `2px solid ${accentColor}` }}
+            animate={{ scale: [1, 1.2, 1], opacity: [0.6, 0, 0.6] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        )}
+        <span className="relative z-10">
           {isPlaying ? '\u23F9' : '\u25B6'}
-        </motion.button>
+        </span>
+      </motion.button>
 
-        {/* Remix */}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={onRemix}
-          disabled={!hasTrack || loading}
-          className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
-            !hasTrack
-              ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
-              : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700'
-          }`}
-        >
-          {loading ? (
-            <span className="flex items-center gap-2">
-              <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              Remixing
-            </span>
-          ) : (
-            '\u{1F3B2} Remix'
-          )}
-        </motion.button>
-
-        {/* Show Code Toggle */}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={onToggleCode}
-          disabled={!hasTrack}
-          className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all border ${
-            !hasTrack
-              ? 'bg-zinc-800 text-zinc-600 border-zinc-800 cursor-not-allowed'
-              : showCode
-                ? 'bg-zinc-700 text-white border-zinc-600'
-                : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700'
-          }`}
-        >
-          {'</>'} Code
-        </motion.button>
-      </div>
+      {/* Remix */}
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={onRemix}
+        disabled={!hasTrack || loading}
+        className="px-5 py-2.5 rounded-lg text-sm font-medium transition-all border"
+        style={{
+          borderColor: !hasTrack ? 'transparent' : 'var(--border-standard)',
+          color: !hasTrack ? 'var(--text-muted)' : 'var(--text-secondary)',
+          background: !hasTrack ? 'var(--surface-raised)' : 'transparent',
+          cursor: !hasTrack ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {loading ? (
+          <span className="flex items-center gap-2">
+            <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            Remixing
+          </span>
+        ) : (
+          'Remix'
+        )}
+      </motion.button>
     </div>
   )
 }
