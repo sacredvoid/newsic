@@ -24,6 +24,7 @@ export function useTrack() {
   const [generatedTrack, setGeneratedTrack] = useState<GeneratedTrack | null>(null)
   const [loading, setLoading] = useState(false)
   const initRef = useRef(false)
+  const [analyserNode] = useState<AnalyserNode | null>(null)
 
   const ensureInit = useCallback(async () => {
     if (!initRef.current) {
@@ -143,6 +144,7 @@ export function useTrack() {
     state,
     generatedTrack,
     loading,
+    analyserNode,
     setGenre,
     setMood,
     setArtist,
