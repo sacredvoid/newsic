@@ -13,7 +13,7 @@ function App() {
       <header className="p-4 border-b border-zinc-800">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-2xl font-bold tracking-tight">newsic</h1>
-          <p className="text-zinc-500 text-sm mt-0.5">new music, made with code</p>
+          <p className="text-zinc-500 text-sm mt-0.5">explore EDM from a different POV</p>
         </div>
       </header>
 
