@@ -1,44 +1,17 @@
-import { motion } from 'framer-motion'
+import { useRef, useEffect } from 'react'
 import type { LayerName, LayerState } from '../types'
 
-const layerColors: Record<LayerName, { bg: string; text: string; accent: string; bar: string }> = {
-  drums: {
-    bg: 'bg-orange-500/10',
-    text: 'text-orange-400',
-    accent: 'border-orange-500/30',
-    bar: 'bg-orange-500',
-  },
-  bass: {
-    bg: 'bg-purple-500/10',
-    text: 'text-purple-400',
-    accent: 'border-purple-500/30',
-    bar: 'bg-purple-500',
-  },
-  lead: {
-    bg: 'bg-cyan-500/10',
-    text: 'text-cyan-400',
-    accent: 'border-cyan-500/30',
-    bar: 'bg-cyan-500',
-  },
-  fx: {
-    bg: 'bg-pink-500/10',
-    text: 'text-pink-400',
-    accent: 'border-pink-500/30',
-    bar: 'bg-pink-500',
-  },
-}
-
-const layerIcons: Record<LayerName, string> = {
-  drums: '\u{1F941}',
-  bass: '\u{1F50A}',
-  lead: '\u{1F3B9}',
-  fx: '\u2728',
+const layerColors: Record<LayerName, string> = {
+  drums: '#f97316',
+  bass: '#a855f7',
+  lead: '#06b6d4',
+  fx: '#ec4899',
 }
 
 const layerLabels: Record<LayerName, string> = {
-  drums: 'Drums',
-  bass: 'Bass',
-  lead: 'Lead',
+  drums: 'DRUMS',
+  bass: 'BASS',
+  lead: 'LEAD',
   fx: 'FX',
 }
 
@@ -46,83 +19,101 @@ interface TrackLayerProps {
   layer: LayerState
   onToggleMute: (layer: LayerName) => void
   onVolumeChange: (layer: LayerName, volume: number) => void
+  isPlaying: boolean
+  accentColor: string
 }
 
-function PatternBlocks({ pattern, color }: { pattern: string; color: string }) {
-  if (!pattern) return null
+function VuMeter({ color, isPlaying, volume, muted }: { color: string; isPlaying: boolean; volume: number; muted: boolean }) {
+  const barsRef = useRef<(HTMLDivElement | null)[]>([])
+  const animRef = useRef<number>(0)
 
-  // Parse the pattern string into visual blocks
-  const chars = pattern.replace(/[^a-zA-Z0-9~.*\[\] ]/g, '').split('')
-  const blocks = chars
-    .filter((c) => c !== ' ' && c !== '[' && c !== ']')
-    .slice(0, 32)
-    .map((c) => c !== '~' && c !== '.')
+  useEffect(() => {
+    if (!isPlaying || muted) {
+      barsRef.current.forEach((bar) => {
+        if (bar) bar.style.opacity = '0.15'
+      })
+      return
+    }
+
+    const animate = () => {
+      const time = Date.now() / 1000
+      barsRef.current.forEach((bar, i) => {
+        if (!bar) return
+        const normalizedLevel = Math.random() * volume * 0.8 +
+          Math.sin(time * 4 + i * 0.8) * 0.15 * volume
+        const clamped = Math.max(0.1, Math.min(1, normalizedLevel))
+        bar.style.opacity = String(clamped)
+      })
+      animRef.current = requestAnimationFrame(animate)
+    }
+
+    animRef.current = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(animRef.current)
+  }, [isPlaying, volume, muted])
 
   return (
-    <div className="flex gap-0.5 items-center h-6">
-      {blocks.map((active, i) => (
+    <div className="flex gap-[3px] items-end h-5">
+      {Array.from({ length: 10 }).map((_, i) => (
         <div
           key={i}
-          className={`h-full rounded-sm transition-all ${
-            active ? `${color} opacity-80` : 'bg-zinc-800 opacity-40'
-          }`}
-          style={{ width: `${100 / blocks.length}%`, minWidth: 3 }}
+          ref={(el) => { barsRef.current[i] = el }}
+          className="w-[3px] h-full rounded-sm transition-opacity"
+          style={{ background: color, opacity: 0.15 }}
         />
       ))}
     </div>
   )
 }
 
-export function TrackLayer({ layer, onToggleMute, onVolumeChange }: TrackLayerProps) {
-  const colors = layerColors[layer.name]
+export function TrackLayer({ layer, onToggleMute, onVolumeChange, isPlaying }: TrackLayerProps) {
+  const color = layerColors[layer.name]
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3 }}
-      className={`${colors.bg} border ${colors.accent} rounded-lg p-3 ${
-        layer.muted ? 'opacity-40' : ''
-      } transition-opacity`}
+    <div
+      className="flex items-center gap-4 px-3 py-2 rounded-lg transition-opacity"
+      style={{
+        background: `${color}08`,
+        opacity: layer.muted ? 0.35 : 1,
+        borderLeft: `2px solid ${color}${layer.muted ? '30' : '80'}`,
+      }}
     >
-      <div className="flex items-center gap-3">
-        {/* Icon + Name */}
-        <div className="flex items-center gap-2 w-20 shrink-0">
-          <span className="text-base">{layerIcons[layer.name]}</span>
-          <span className={`text-sm font-medium ${colors.text}`}>
-            {layerLabels[layer.name]}
-          </span>
-        </div>
+      {/* Label */}
+      <span
+        className="text-[10px] font-mono font-bold tracking-widest w-12 shrink-0"
+        style={{ color }}
+      >
+        {layerLabels[layer.name]}
+      </span>
 
-        {/* Pattern Visualization */}
-        <div className="flex-1 min-w-0">
-          <PatternBlocks pattern={layer.pattern} color={colors.bar} />
-        </div>
-
-        {/* Volume Slider */}
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.05}
-          value={layer.volume}
-          onChange={(e) => onVolumeChange(layer.name, Number(e.target.value))}
-          className="w-20 shrink-0 accent-current"
-        />
-
-        {/* Mute Button */}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => onToggleMute(layer.name)}
-          className={`w-8 h-8 rounded text-xs font-bold shrink-0 border transition-all ${
-            layer.muted
-              ? 'bg-zinc-800 border-zinc-700 text-zinc-500'
-              : `${colors.bg} ${colors.accent} ${colors.text}`
-          }`}
-        >
-          {layer.muted ? 'M' : 'M'}
-        </motion.button>
+      {/* VU Meter */}
+      <div className="shrink-0">
+        <VuMeter color={color} isPlaying={isPlaying} volume={layer.volume} muted={layer.muted} />
       </div>
-    </motion.div>
+
+      {/* Volume Slider */}
+      <input
+        type="range"
+        min={0}
+        max={1}
+        step={0.05}
+        value={layer.volume}
+        onChange={(e) => onVolumeChange(layer.name, Number(e.target.value))}
+        className="flex-1 min-w-0"
+        style={{ accentColor: color }}
+      />
+
+      {/* Mute Button */}
+      <button
+        onClick={() => onToggleMute(layer.name)}
+        className="w-7 h-7 rounded text-[10px] font-bold shrink-0 transition-all border font-mono"
+        style={{
+          borderColor: layer.muted ? 'var(--border-standard)' : `${color}50`,
+          color: layer.muted ? 'var(--text-muted)' : color,
+          background: layer.muted ? 'transparent' : `${color}15`,
+        }}
+      >
+        M
+      </button>
+    </div>
   )
 }

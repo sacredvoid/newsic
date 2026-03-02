@@ -9,13 +9,15 @@ interface MixerBoardProps {
   onToggleMute: (layer: LayerName) => void
   onVolumeChange: (layer: LayerName, volume: number) => void
   hasTrack: boolean
+  isPlaying: boolean
+  accentColor: string
 }
 
-export function MixerBoard({ layers, onToggleMute, onVolumeChange, hasTrack }: MixerBoardProps) {
+export function MixerBoard({ layers, onToggleMute, onVolumeChange, hasTrack, isPlaying, accentColor }: MixerBoardProps) {
   if (!hasTrack) {
     return (
-      <div className="border border-dashed border-zinc-800 rounded-xl p-8 text-center">
-        <p className="text-zinc-600 text-sm">
+      <div className="px-5 py-6 text-center">
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
           Pick your style and hit Generate to create a track
         </p>
       </div>
@@ -25,22 +27,23 @@ export function MixerBoard({ layers, onToggleMute, onVolumeChange, hasTrack }: M
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, staggerChildren: 0.1 }}
-        className="space-y-2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="px-5 py-3 space-y-1.5"
       >
         {layerOrder.map((name, i) => (
           <motion.div
             key={name}
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.08 }}
+            transition={{ delay: i * 0.05 }}
           >
             <TrackLayer
               layer={layers[name]}
               onToggleMute={onToggleMute}
               onVolumeChange={onVolumeChange}
+              isPlaying={isPlaying}
+              accentColor={accentColor}
             />
           </motion.div>
         ))}
