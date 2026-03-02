@@ -14,44 +14,34 @@ export function CodePreview({ code }: CodePreviewProps) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const strudelUrl = `https://strudel.cc/#${btoa(code)}`
-
   return (
     <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3 }}
-      className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="w-full h-full flex flex-col overflow-hidden"
+      style={{ background: 'rgba(10, 10, 15, 0.92)', backdropFilter: 'blur(8px)' }}
     >
-      <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800">
-        <span className="text-xs uppercase tracking-widest text-zinc-500">Strudel Code</span>
-        <div className="flex gap-2">
-          <button
-            onClick={handleCopy}
-            className="text-xs px-3 py-1 rounded bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-          >
-            {copied ? 'Copied!' : 'Copy'}
-          </button>
-          <a
-            href={strudelUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs px-3 py-1 rounded bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
-          >
-            Open in Strudel
-          </a>
-        </div>
+      <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+        <span className="text-[10px] uppercase tracking-[0.2em] font-mono" style={{ color: 'var(--text-muted)' }}>
+          Strudel Code
+        </span>
+        <button
+          onClick={handleCopy}
+          className="text-xs px-3 py-1 rounded-md font-medium transition-all border"
+          style={{
+            borderColor: 'var(--border-standard)',
+            color: copied ? 'var(--accent)' : 'var(--text-secondary)',
+          }}
+        >
+          {copied ? 'Copied!' : 'Copy'}
+        </button>
       </div>
-      <pre className="p-4 text-sm font-mono text-zinc-300 overflow-x-auto leading-relaxed">
-        <code>{highlightCode(code)}</code>
+      <pre className="flex-1 p-5 text-xs font-mono overflow-auto leading-relaxed custom-scrollbar"
+        style={{ color: 'var(--text-secondary)' }}>
+        <code>{code}</code>
       </pre>
     </motion.div>
   )
-}
-
-function highlightCode(code: string): string {
-  // Simple highlighting - return raw code for now
-  // The pre/code block with monospace font is sufficient
-  return code
 }
