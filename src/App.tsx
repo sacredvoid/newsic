@@ -8,7 +8,7 @@ import { MobileBanner } from './components/MobileBanner'
 import { useTrack } from './hooks/useTrack'
 
 const genreAccentMap: Record<string, { accent: string; glow: string }> = {
-  house: { accent: '#f59e0b', glow: 'rgba(245, 158, 11, 0.08)' },
+  house: { accent: '#3b82f6', glow: 'rgba(59, 130, 246, 0.08)' },
   techno: { accent: '#ef4444', glow: 'rgba(239, 68, 68, 0.08)' },
   trance: { accent: '#06b6d4', glow: 'rgba(6, 182, 212, 0.08)' },
   dnb: { accent: '#22c55e', glow: 'rgba(34, 197, 94, 0.08)' },
@@ -26,7 +26,7 @@ function App() {
     }
   }, [track.state.genre])
 
-  const accentHex = genreAccentMap[track.state.genre]?.accent ?? '#f59e0b'
+  const accentHex = genreAccentMap[track.state.genre]?.accent ?? '#3b82f6'
 
   return (
     <>

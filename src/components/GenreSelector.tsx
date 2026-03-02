@@ -5,7 +5,7 @@ import { moods } from '../data/moods'
 import { getArtistsByGenre } from '../data/artists'
 
 const genreAccentHex: Record<Genre, string> = {
-  house: '#f59e0b',
+  house: '#3b82f6',
   techno: '#ef4444',
   trance: '#06b6d4',
   dnb: '#22c55e',
@@ -179,7 +179,7 @@ export function GenreSelector({
         className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all"
         style={{
           background: loading ? `${accent}60` : accent,
-          color: genre === 'techno' ? '#fff' : '#000',
+          color: (genre === 'techno' || genre === 'house') ? '#fff' : '#000',
           cursor: loading ? 'wait' : 'pointer',
           boxShadow: loading ? 'none' : `0 0 30px ${accent}30`,
         }}

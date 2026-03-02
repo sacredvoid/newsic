@@ -11,8 +11,8 @@
   --text-muted: #52525b;
 
   /* Genre accent - overridden by JS */
-  --accent: #f59e0b;
-  --accent-glow: rgba(245, 158, 11, 0.08);
+  --accent: #3b82f6;
+  --accent-glow: rgba(59, 130, 246, 0.08);
 }
 
 body {
