@@ -11,27 +11,6 @@ const genreAccentHex: Record<Genre, string> = {
   dnb: '#22c55e',
 }
 
-const genreButtonStyles: Record<Genre, string> = {
-  house: 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20',
-  techno: 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20',
-  trance: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20',
-  dnb: 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20',
-}
-
-const genreActiveStyles: Record<Genre, string> = {
-  house: 'bg-amber-500/30 border-amber-500 text-amber-300 shadow-amber-500/20 shadow-lg',
-  techno: 'bg-red-500/30 border-red-500 text-red-300 shadow-red-500/20 shadow-lg',
-  trance: 'bg-cyan-500/30 border-cyan-500 text-cyan-300 shadow-cyan-500/20 shadow-lg',
-  dnb: 'bg-green-500/30 border-green-500 text-green-300 shadow-green-500/20 shadow-lg',
-}
-
-const generateButtonStyles: Record<Genre, string> = {
-  house: 'bg-amber-500 hover:bg-amber-400 text-black',
-  techno: 'bg-red-500 hover:bg-red-400 text-white',
-  trance: 'bg-cyan-500 hover:bg-cyan-400 text-black',
-  dnb: 'bg-green-500 hover:bg-green-400 text-black',
-}
-
 interface GenreSelectorProps {
   genre: Genre
   mood: Mood
@@ -59,74 +38,82 @@ export function GenreSelector({
 }: GenreSelectorProps) {
   const artists = getArtistsByGenre(genre)
   const currentGenreConfig = genres.find((g) => g.id === genre)!
-  const accentHex = genreAccentHex[genre]
+  const accent = genreAccentHex[genre]
 
   return (
-    <div className="space-y-5">
-      {/* Genre Selection */}
+    <div className="flex flex-col gap-6 flex-1">
+      {/* Genre - 2x2 grid */}
       <div>
-        <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Genre</label>
-        <div className="flex gap-2">
-          {genres.map((g) => (
-            <motion.button
-              key={g.id}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                onGenreChange(g.id)
-                onArtistChange(null)
-                onBpmChange(g.defaultBpm)
-              }}
-              className={`flex-1 py-2.5 px-3 rounded-lg border text-sm font-medium transition-all ${
-                genre === g.id ? genreActiveStyles[g.id] : genreButtonStyles[g.id]
-              }`}
-            >
-              {g.label}
-            </motion.button>
-          ))}
+        <label className="block text-[10px] uppercase tracking-[0.2em] mb-2.5 font-medium"
+          style={{ color: 'var(--text-muted)' }}>
+          Genre
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {genres.map((g) => {
+            const isActive = genre === g.id
+            const gAccent = genreAccentHex[g.id]
+            return (
+              <motion.button
+                key={g.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  onGenreChange(g.id)
+                  onArtistChange(null)
+                  onBpmChange(g.defaultBpm)
+                }}
+                className="py-2.5 px-3 rounded-lg text-sm font-medium transition-all border"
+                style={{
+                  borderColor: isActive ? gAccent : 'var(--border-standard)',
+                  color: isActive ? gAccent : 'var(--text-secondary)',
+                  background: isActive ? `${gAccent}15` : 'transparent',
+                  boxShadow: isActive ? `0 0 20px ${gAccent}20` : 'none',
+                }}
+              >
+                {g.label}
+              </motion.button>
+            )
+          })}
         </div>
       </div>
 
-      {/* Mood + Artist Row */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">Mood</label>
-          <select
-            value={mood}
-            onChange={(e) => onMoodChange(e.target.value as Mood)}
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-zinc-500"
-          >
-            {moods.map((m) => (
-              <option key={m.id} value={m.id}>
+      {/* Mood - chip row */}
+      <div>
+        <label className="block text-[10px] uppercase tracking-[0.2em] mb-2.5 font-medium"
+          style={{ color: 'var(--text-muted)' }}>
+          Mood
+        </label>
+        <div className="flex flex-wrap gap-1.5">
+          {moods.map((m) => {
+            const isActive = mood === m.id
+            return (
+              <button
+                key={m.id}
+                onClick={() => onMoodChange(m.id)}
+                className="px-3 py-1.5 rounded-full text-xs font-medium transition-all border"
+                style={{
+                  borderColor: isActive ? accent : 'var(--border-standard)',
+                  color: isActive ? accent : 'var(--text-secondary)',
+                  background: isActive ? `${accent}15` : 'transparent',
+                }}
+              >
                 {m.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs uppercase tracking-widest text-zinc-500 mb-2">
-            Inspired By
-          </label>
-          <select
-            value={artistId ?? ''}
-            onChange={(e) => onArtistChange(e.target.value || null)}
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-zinc-500"
-          >
-            <option value="">None (genre default)</option>
-            {artists.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+              </button>
+            )
+          })}
         </div>
       </div>
 
-      {/* BPM Slider */}
+      {/* BPM */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-xs uppercase tracking-widest text-zinc-500">Tempo</label>
-          <span className="text-sm font-mono text-zinc-300">{bpm} BPM</span>
+          <label className="text-[10px] uppercase tracking-[0.2em] font-medium"
+            style={{ color: 'var(--text-muted)' }}>
+            Tempo
+          </label>
+          <span className="text-lg font-mono font-bold" style={{ color: accent }}>
+            {bpm}
+            <span className="text-[10px] ml-1 font-normal" style={{ color: 'var(--text-muted)' }}>BPM</span>
+          </span>
         </div>
         <input
           type="range"
@@ -135,13 +122,53 @@ export function GenreSelector({
           value={bpm}
           onChange={(e) => onBpmChange(Number(e.target.value))}
           className="w-full"
-          style={{ accentColor: accentHex }}
         />
-        <div className="flex justify-between text-xs text-zinc-600 mt-1">
+        <div className="flex justify-between text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
           <span>{currentGenreConfig.bpmRange[0]}</span>
           <span>{currentGenreConfig.bpmRange[1]}</span>
         </div>
       </div>
+
+      {/* Inspired By - chip list */}
+      <div>
+        <label className="block text-[10px] uppercase tracking-[0.2em] mb-2.5 font-medium"
+          style={{ color: 'var(--text-muted)' }}>
+          Inspired By
+        </label>
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            onClick={() => onArtistChange(null)}
+            className="px-3 py-1.5 rounded-full text-xs font-medium transition-all border"
+            style={{
+              borderColor: artistId === null ? accent : 'var(--border-standard)',
+              color: artistId === null ? accent : 'var(--text-secondary)',
+              background: artistId === null ? `${accent}15` : 'transparent',
+            }}
+          >
+            None
+          </button>
+          {artists.map((a) => {
+            const isActive = artistId === a.id
+            return (
+              <button
+                key={a.id}
+                onClick={() => onArtistChange(a.id)}
+                className="px-3 py-1.5 rounded-full text-xs font-medium transition-all border"
+                style={{
+                  borderColor: isActive ? accent : 'var(--border-standard)',
+                  color: isActive ? accent : 'var(--text-secondary)',
+                  background: isActive ? `${accent}15` : 'transparent',
+                }}
+              >
+                {a.name}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Spacer to push generate button to bottom */}
+      <div className="flex-1" />
 
       {/* Generate Button */}
       <motion.button
@@ -149,9 +176,13 @@ export function GenreSelector({
         whileHover={{ scale: 1.01 }}
         onClick={onGenerate}
         disabled={loading}
-        className={`w-full py-3.5 rounded-xl text-base font-bold tracking-wide transition-all ${generateButtonStyles[genre]} ${
-          loading ? 'opacity-60 cursor-wait' : ''
-        }`}
+        className="w-full py-3.5 rounded-xl text-sm font-bold tracking-wide transition-all"
+        style={{
+          background: loading ? `${accent}60` : accent,
+          color: genre === 'techno' ? '#fff' : '#000',
+          cursor: loading ? 'wait' : 'pointer',
+          boxShadow: loading ? 'none' : `0 0 30px ${accent}30`,
+        }}
       >
         {loading ? (
           <span className="flex items-center justify-center gap-2">
