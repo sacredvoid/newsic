@@ -74,45 +74,55 @@ export function useTrack() {
 
   const generate = useCallback(async () => {
     setLoading(true)
-    await ensureInit()
+    try {
+      await ensureInit()
 
-    const track = buildTrack(state.genre, state.bpm, state.mood, state.artistId)
-    setGeneratedTrack(track)
+      const track = buildTrack(state.genre, state.bpm, state.mood, state.artistId)
+      setGeneratedTrack(track)
 
-    setState((prev) => ({
-      ...prev,
-      layers: {
-        drums: { ...prev.layers.drums, pattern: track.layers.drums },
-        bass: { ...prev.layers.bass, pattern: track.layers.bass },
-        lead: { ...prev.layers.lead, pattern: track.layers.lead },
-        fx: { ...prev.layers.fx, pattern: track.layers.fx },
-      },
-    }))
+      setState((prev) => ({
+        ...prev,
+        layers: {
+          drums: { ...prev.layers.drums, pattern: track.layers.drums },
+          bass: { ...prev.layers.bass, pattern: track.layers.bass },
+          lead: { ...prev.layers.lead, pattern: track.layers.lead },
+          fx: { ...prev.layers.fx, pattern: track.layers.fx },
+        },
+      }))
 
-    await playPattern(track.code)
-    setState((prev) => ({ ...prev, isPlaying: true }))
+      console.log('[CMS] Generated code:\n', track.code)
+      await playPattern(track.code)
+      setState((prev) => ({ ...prev, isPlaying: true }))
+    } catch (err) {
+      console.error('[CMS] Generate error:', err)
+    }
     setLoading(false)
   }, [state.genre, state.bpm, state.mood, state.artistId, ensureInit])
 
   const remix = useCallback(async () => {
     setLoading(true)
-    await ensureInit()
+    try {
+      await ensureInit()
 
-    const track = remixTrack(state.genre, state.bpm, state.mood, state.artistId)
-    setGeneratedTrack(track)
+      const track = remixTrack(state.genre, state.bpm, state.mood, state.artistId)
+      setGeneratedTrack(track)
 
-    setState((prev) => ({
-      ...prev,
-      layers: {
-        drums: { ...prev.layers.drums, pattern: track.layers.drums },
-        bass: { ...prev.layers.bass, pattern: track.layers.bass },
-        lead: { ...prev.layers.lead, pattern: track.layers.lead },
-        fx: { ...prev.layers.fx, pattern: track.layers.fx },
-      },
-    }))
+      setState((prev) => ({
+        ...prev,
+        layers: {
+          drums: { ...prev.layers.drums, pattern: track.layers.drums },
+          bass: { ...prev.layers.bass, pattern: track.layers.bass },
+          lead: { ...prev.layers.lead, pattern: track.layers.lead },
+          fx: { ...prev.layers.fx, pattern: track.layers.fx },
+        },
+      }))
 
-    await playPattern(track.code)
-    setState((prev) => ({ ...prev, isPlaying: true }))
+      console.log('[CMS] Remix code:\n', track.code)
+      await playPattern(track.code)
+      setState((prev) => ({ ...prev, isPlaying: true }))
+    } catch (err) {
+      console.error('[CMS] Remix error:', err)
+    }
     setLoading(false)
   }, [state.genre, state.bpm, state.mood, state.artistId, ensureInit])
 

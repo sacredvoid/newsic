@@ -14,7 +14,7 @@ export function CodePreview({ code }: CodePreviewProps) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const strudelUrl = `https://strudel.cc/#${btoa(encodeURIComponent(code))}`
+  const strudelUrl = `https://strudel.cc/#${btoa(code)}`
 
   return (
     <motion.div
