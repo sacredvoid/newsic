@@ -1,9 +1,33 @@
 @import "tailwindcss";
 
+:root {
+  --surface-base: #0a0a0f;
+  --surface-raised: #13131a;
+  --surface-glass: rgba(255, 255, 255, 0.03);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-standard: rgba(255, 255, 255, 0.10);
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #52525b;
+
+  /* Genre accent - overridden by JS */
+  --accent: #f59e0b;
+  --accent-glow: rgba(245, 158, 11, 0.08);
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+/* Mono font utility */
+.font-mono {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 }
 
 /* Custom select styling for dark theme */
@@ -26,7 +50,7 @@ input[type="range"] {
   appearance: none;
   height: 6px;
   border-radius: 3px;
-  background: #27272a;
+  background: #1e1e28;
   outline: none;
 }
 
@@ -36,15 +60,30 @@ input[type="range"]::-webkit-slider-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: currentColor;
+  background: var(--accent);
   cursor: pointer;
+  box-shadow: 0 0 8px var(--accent-glow);
 }
 
 input[type="range"]::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: currentColor;
+  background: var(--accent);
   cursor: pointer;
   border: none;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* Scrollbar for code preview */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }
