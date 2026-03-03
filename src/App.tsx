@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { GenreSelector } from './components/GenreSelector'
 import { MixerBoard } from './components/MixerBoard'
 import { TransportBar } from './components/TransportBar'
@@ -30,6 +31,7 @@ function App() {
 
   return (
     <>
+      <Analytics />
       <MobileBanner />
       <div className="h-screen flex flex-col overflow-hidden" style={{ background: `var(--surface-base)` }}>
         {/* Top header bar */}
