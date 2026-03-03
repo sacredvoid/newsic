@@ -1,4 +1,4 @@
-import type { GeneratedTrack, Genre, Mood, LayerName } from '../types'
+import type { GeneratedTrack, Genre, Mood } from '../types'
 import { buildTrack, buildCodeFromLayers } from './patternBuilder'
 
 export function remixTrack(
